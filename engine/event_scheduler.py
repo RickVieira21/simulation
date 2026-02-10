@@ -14,11 +14,13 @@ class EventScheduler:
         self.running = True
         self.schedule_next_flight()
         self.schedule_runway_update()
-
+        self.schedule_flight_update()
 
     def stop(self):
         self.running = False
 
+
+# ---  UPDATE TICKS ---
 
     def schedule_runway_update(self):
         if not self.running:
@@ -30,6 +32,25 @@ class EventScheduler:
 
         # tick a cada 1 segundo
         self.root.after(1000, self.schedule_runway_update)
+
+
+    def schedule_flight_update(self):
+        if not self.running:
+            return
+
+        for flight in list(self.engine.flights):
+            flight.tick(self.engine.cognitive.time_speed)
+
+            if flight.completed:
+                self.ui.remove_flight(flight)
+                self.engine.flights.remove(flight)
+            else:
+                self.ui.update_flight(flight)
+
+        self.root.after(1000, self.schedule_flight_update)
+
+
+# ----------------------
 
 
     def schedule_next_flight(self):

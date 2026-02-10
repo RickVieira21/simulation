@@ -32,7 +32,9 @@ class ATCApp:
         self.selected_flight = None
         self.selected_flight_button = None
         self.selected_runway = None
+        self.selected_runway_rect = None
 
+        self.flight_buttons = {}
         self.runway_timer_texts = {}
 
         main_frame = tk.Frame(root)
@@ -141,7 +143,7 @@ class ATCApp:
 
 
     def select_runway(self, runway_name):
-        if not self.selected_flight:
+        if not self.selected_flight_obj:
             self.add_log("No flight selected.")
             return
 
@@ -151,11 +153,25 @@ class ATCApp:
             self.add_log(f"Pista {runway_name} está ocupada.")
             return
 
+        # remover highlight anterior
+        if self.selected_runway_rect:
+            prev = self.selected_runway
+            prev_runway = self.engine.get_runway(prev)
+            if prev_runway.available:
+                self.canvas.itemconfig(self.selected_runway_rect, fill="#b3ffb3")
+
+        # novo highlight
+        rect = self.runways[runway_name]
+        self.canvas.itemconfig(rect, fill="#99ccff")
+
         self.selected_runway = runway_name
+        self.selected_runway_rect = rect
+
         self.add_log(
-            f"Pretende atribuir o voo {self.selected_flight} "
+            f"Pretende atribuir o voo {self.selected_flight_obj.callsign} "
             f"à pista {runway_name}? Carregar Authorize para confirmar."
         )
+
 
 
     def update_runway(self, runway):
@@ -192,6 +208,8 @@ class ATCApp:
 
         btn.config(command=lambda: self.select_flight(btn, flight))
         btn.pack(fill="x", pady=5)
+            
+        self.flight_buttons[flight] = btn
 
 
     def select_flight(self, button, flight):
@@ -205,6 +223,25 @@ class ATCApp:
         button.config(bg="#99ccff")
         self.add_log(f"Selected flight: {flight.callsign}")
 
+
+    def update_flight(self, flight):
+        btn = self.flight_buttons.get(flight)
+        
+        # voo já não está na UI (foi autorizado)
+        if not btn or not btn.winfo_exists():
+            return
+
+        btn.config(text=f"{flight.callsign} - T-{flight.eta}s")
+
+
+    def remove_flight(self, flight):
+        btn = self.flight_buttons.pop(flight, None)
+        if btn:
+            btn.destroy()
+            self.add_log(f"Voo {flight.callsign} expirou.")
+
+
+    # -----------------------------------
 
 
     def authorize(self):
@@ -228,9 +265,13 @@ class ATCApp:
             f"Voo {flight.callsign} autorizado para a pista {runway.name}."
         )
 
+        self.engine.flights.remove(flight)
+
+        self.selected_runway_rect = None
+        self.selected_runway = None
+
         self.selected_flight = None
         self.selected_flight_button = None
-        self.selected_runway = None
 
 
     
