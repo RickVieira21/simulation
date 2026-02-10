@@ -12,7 +12,7 @@ cognitive = CognitiveLoadProfile("LOW")
 complexity = TaskComplexityProfile("LOW")
 
 engine = SimulationEngine(cognitive, complexity)
-app = ATCApp(root)
+app = ATCApp(root, engine)
 
 scheduler = EventScheduler(root, engine, app)
 scheduler.start()

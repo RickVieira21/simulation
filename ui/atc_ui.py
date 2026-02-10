@@ -23,8 +23,9 @@ class ScrollableFrame(ttk.Frame):
 
 
 class ATCApp:
-    def __init__(self, root):
+    def __init__(self, root, engine):
         self.root = root
+        self.engine = engine
         self.root.title("ATC Simulator")
         self.root.geometry("1450x820")
                 
@@ -32,15 +33,7 @@ class ATCApp:
         self.selected_flight_button = None
         self.selected_runway = None
 
-        self.runway_occupied = {
-            "A": False,
-            "B": False,
-            "C": False
-        }
-
-        self.runway_timers = {}
         self.runway_timer_texts = {}
-
 
         main_frame = tk.Frame(root)
         main_frame.pack(fill="both", expand=True)
@@ -107,7 +100,8 @@ class ATCApp:
         )
         authorize_btn.pack()
 
-    # ---------------------------
+    # --------------------------- RUNWAYS
+
     def draw_runways(self):
         lane_height = 130
         spacing = 35
@@ -151,7 +145,9 @@ class ATCApp:
             self.add_log("No flight selected.")
             return
 
-        if self.runway_occupied[runway_name]:
+        runway = self.engine.get_runway(runway_name)
+
+        if not runway.available:
             self.add_log(f"Pista {runway_name} está ocupada.")
             return
 
@@ -162,40 +158,53 @@ class ATCApp:
         )
 
 
-    # ---------------------------
+    def update_runway(self, runway):
+        rect = self.runways[runway.name]
+        text_id = self.runway_timer_texts[runway.name]
+
+        if runway.available:
+            self.canvas.itemconfig(rect, fill="#b3ffb3")
+            self.canvas.itemconfig(text_id, text="")
+        else:
+            self.canvas.itemconfig(rect, fill="red")
+            self.canvas.itemconfig(
+                text_id,
+                text=f"Ocupada: {runway.remaining_time}s"
+            )
+
+
+    # --------------------------- FLIGHTS
 
     def add_flight(self, flight):
         text = f"{flight.callsign} - ETA {flight.eta}s"
-        self.add_flight_button(text)
+        self.add_flight_button(flight, text)
 
 
-    def add_flight_button(self, text):
+    def add_flight_button(self, flight, text):
         btn = tk.Button(
             self.scroll.scrollable_frame,
             text=text,
             font=("Arial", 14),
             bg="#e6f0ff",
-            width=55,  
+            width=55,
             height=2
         )
 
-        btn.config(command=lambda: self.select_flight(btn, text))
-
+        btn.config(command=lambda: self.select_flight(btn, flight))
         btn.pack(fill="x", pady=5)
 
 
-
     def select_flight(self, button, flight):
-        # limpar seleção anterior
         if self.selected_flight_button:
             self.selected_flight_button.config(bg="#e6f0ff")
 
-        # marcar novo
         self.selected_flight_button = button
-        self.selected_flight = flight
-        button.config(bg="#99ccff")
+        self.selected_flight_obj = flight
+        self.selected_flight = flight.callsign  # só para mensagens
 
-        self.add_log(f"Selected flight: {flight}")
+        button.config(bg="#99ccff")
+        self.add_log(f"Selected flight: {flight.callsign}")
+
 
 
     def authorize(self):
@@ -203,28 +212,26 @@ class ATCApp:
             self.add_log("Selecione um voo e uma pista primeiro.")
             return
 
-        runway = self.selected_runway
-        rect = self.runways[runway]
+        runway = self.engine.get_runway(self.selected_runway)
+        flight = self.selected_flight_obj  
 
-        # marcar pista como ocupada
-        self.runway_occupied[runway] = True
-        self.canvas.itemconfig(rect, fill="red")
+        success = self.engine.assign_flight_to_runway(flight, runway)
+
+        if not success:
+            self.add_log(f"Pista {runway.name} está ocupada.")
+            return
 
         # remover voo da queue
         self.selected_flight_button.destroy()
 
         self.add_log(
-            f"Voo {self.selected_flight} autorizado para a pista {runway}."
+            f"Voo {flight.callsign} autorizado para a pista {runway.name}."
         )
 
-        # duração (exemplo simples por agora)
-        duration = 10  # segundos (depois ligamos ao nível)
-        self.start_runway_timer(runway, duration)
-
-        # limpar estado
         self.selected_flight = None
         self.selected_flight_button = None
         self.selected_runway = None
+
 
     
     def start_runway_timer(self, runway, remaining):

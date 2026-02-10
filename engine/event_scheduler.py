@@ -13,9 +13,24 @@ class EventScheduler:
     def start(self):
         self.running = True
         self.schedule_next_flight()
+        self.schedule_runway_update()
+
 
     def stop(self):
         self.running = False
+
+
+    def schedule_runway_update(self):
+        if not self.running:
+            return
+
+        for runway in self.engine.runways:
+            runway.tick()
+            self.ui.update_runway(runway)
+
+        # tick a cada 1 segundo
+        self.root.after(1000, self.schedule_runway_update)
+
 
     def schedule_next_flight(self):
         if not self.running:
