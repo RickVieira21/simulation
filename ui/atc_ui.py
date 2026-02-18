@@ -74,17 +74,17 @@ class ATCApp:
         #   BOTTOM SECTION
         # ---------------------------
         bottom_frame = tk.Frame(main_frame)
-        bottom_frame.pack(fill="x", pady=5)
+        bottom_frame.pack(fill="x", pady=10)
 
         # CONSOLE (left)
-        console_frame = tk.Frame(bottom_frame, bg="#d9d9d9", height=180)
+        console_frame = tk.Frame(bottom_frame, bg="#d9d9d9", height=380)
         console_frame.pack(side="left", fill="x", expand=True)
         console_frame.pack_propagate(False)
 
         tk.Label(
             console_frame,
             text="Console",
-            font=("Arial", 14, "bold"),
+            font=("Arial", 16, "bold"),
             bg="#d9d9d9"
         ).pack(anchor="w", padx=10, pady=5)
 
@@ -311,7 +311,7 @@ class ATCApp:
             text=msg,
             anchor="w",
             bg="white",
-            font=("Arial", 10)
+            font=("Arial", 13)
         )
         label.pack(side="left", fill="x")
 
@@ -336,7 +336,7 @@ class ATCApp:
             text=f"[SYSTEM] {message_obj.text}",
             anchor="w",
             bg="white",
-            font=("Arial", 10, "bold")
+            font=("Arial", 13, "bold")
         )
         label.pack(side="left", fill="x")
 
@@ -350,7 +350,7 @@ class ATCApp:
 
         label.config(
             fg="green",
-            font=("Arial", 10)
+            font=("Arial", 13)
         )
 
         print("Reaction time:", message_obj.reaction_time)
