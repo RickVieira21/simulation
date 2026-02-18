@@ -1,4 +1,5 @@
 import random
+from engine.system_message import SystemMessage  
 
 class SystemMessageManager:
     def __init__(self, cognitive_profile):
@@ -9,4 +10,5 @@ class SystemMessageManager:
 
     def generate_message(self):
         messages = self.cognitive.messages
-        return random.choice(messages)
+        text = random.choice(messages)
+        return SystemMessage(text)

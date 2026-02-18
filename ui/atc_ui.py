@@ -77,14 +77,41 @@ class ATCApp:
         bottom_frame.pack(fill="x", pady=5)
 
         # CONSOLE (left)
-        console_frame = tk.Frame(bottom_frame, bg="#d9d9d9", height=130)
+        console_frame = tk.Frame(bottom_frame, bg="#d9d9d9", height=180)
         console_frame.pack(side="left", fill="x", expand=True)
+        console_frame.pack_propagate(False)
 
-        tk.Label(console_frame, text="Console", font=("Arial", 14, "bold"), bg="#d9d9d9")\
-            .pack(anchor="w", padx=10, pady=5)
+        tk.Label(
+            console_frame,
+            text="Console",
+            font=("Arial", 14, "bold"),
+            bg="#d9d9d9"
+        ).pack(anchor="w", padx=10, pady=5)
 
-        self.log = tk.Text(console_frame, height=6, state="disabled")
-        self.log.pack(fill="x", padx=10, pady=(0, 5))
+        # Frame branco fixo
+        content_frame = tk.Frame(console_frame, bg="white")
+        content_frame.pack(fill="both", expand=True, padx=10, pady=(0, 5))
+
+        # Canvas para permitir scroll interno
+        canvas = tk.Canvas(content_frame, bg="white", highlightthickness=0)
+        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
+
+        scrollable_area = tk.Frame(canvas, bg="white")
+
+        scrollable_area.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_area, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        self.message_frame = scrollable_area
+
+
 
         # AUTHORIZE button (right)
         auth_frame = tk.Frame(bottom_frame)
@@ -276,13 +303,60 @@ class ATCApp:
 
 
     def add_log(self, msg):
-        self.log.config(state="normal")
-        self.log.insert("end", msg + "\n")
-        self.log.config(state="disabled")
-        self.log.see("end")
+        row = tk.Frame(self.message_frame, bg="white")
+        row.pack(fill="x", pady=1)
 
-    def add_system_message(self, msg):
-        self.add_log(f"[SYSTEM] {msg}")
+        label = tk.Label(
+            row,
+            text=msg,
+            anchor="w",
+            bg="white",
+            font=("Arial", 10)
+        )
+        label.pack(side="left", fill="x")
+
+
+    
+    def add_system_message(self, message_obj):
+        row = tk.Frame(self.message_frame, bg="white")
+        row.pack(fill="x", pady=1)
+
+        var = tk.BooleanVar(value=False)
+
+        checkbox = tk.Checkbutton(
+            row,
+            variable=var,
+            bg="white",
+            command=lambda: self.acknowledge_message(message_obj, var, label)
+        )
+        checkbox.pack(side="left")
+
+        label = tk.Label(
+            row,
+            text=f"[SYSTEM] {message_obj.text}",
+            anchor="w",
+            bg="white",
+            font=("Arial", 10, "bold")
+        )
+        label.pack(side="left", fill="x")
+
+
+
+    def acknowledge_message(self, message_obj, var, label):
+        if not var.get():
+            return
+
+        message_obj.acknowledge()
+
+        label.config(
+            fg="green",
+            font=("Arial", 10)
+        )
+
+        print("Reaction time:", message_obj.reaction_time)
+
+
+
 
 
 

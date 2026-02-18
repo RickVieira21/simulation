@@ -8,7 +8,7 @@ from engine.event_scheduler import EventScheduler
 
 root = tk.Tk()
 
-cognitive = CognitiveLoadProfile("LOW")
+cognitive = CognitiveLoadProfile("HIGH")
 complexity = TaskComplexityProfile("LOW")
 
 engine = SimulationEngine(cognitive, complexity)
