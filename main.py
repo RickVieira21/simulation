@@ -15,7 +15,7 @@ def main():
 
     def start_experiment(participant_id):
 
-        # Limpar tudo da janela
+        # Limpar tudo 
         for widget in root.winfo_children():
             widget.destroy()
 

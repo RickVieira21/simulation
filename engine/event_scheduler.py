@@ -8,7 +8,7 @@ class EventScheduler:
         self.ui = ui
         self.running = False
 
-        self.message_manager = SystemMessageManager(engine.cognitive)
+        self.message_manager = SystemMessageManager(engine)
 
     def start(self):
         self.running = True
@@ -62,6 +62,7 @@ class EventScheduler:
             self.ui.add_flight(flight)
 
         if self.message_manager.should_send_message():
+            print("sendddddd")
             msg = self.message_manager.generate_message()
             self.ui.add_system_message(msg)
 
