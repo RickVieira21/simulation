@@ -7,6 +7,7 @@ class Flight:
         self.allowed_runways = allowed_runways
         self.assigned_runway = None
         self.completed = False
+        self.required_runway = None  # None = sem restrição
 
     def tick(self, speed=1):
         if self.assigned_runway is None:

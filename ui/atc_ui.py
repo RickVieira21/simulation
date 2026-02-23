@@ -177,7 +177,7 @@ class ATCApp:
         runway = self.engine.get_runway(runway_name)
 
         if not runway.available:
-            self.add_log(f"Pista {runway_name} está ocupada.")
+            self.add_log(f"Runway {runway_name} is already occupied.")
             return
 
         # remover highlight anterior
@@ -195,8 +195,8 @@ class ATCApp:
         self.selected_runway_rect = rect
 
         self.add_log(
-            f"Pretende atribuir o voo {self.selected_flight_obj.callsign} "
-            f"à pista {runway_name}? Carregar Authorize para confirmar."
+            f"Do you pretend to allocate {self.selected_flight_obj.callsign} "
+            f"to runway {runway_name}? Press Authorize to confirm."
         )
 
 
@@ -220,46 +220,84 @@ class ATCApp:
     # --------------------------- FLIGHTS
 
     def add_flight(self, flight):
-        text = f"{flight.callsign} - ETA {flight.eta}s"
+
+        base_text = f"{flight.callsign} - ETA {flight.eta}s"
+
+        # Se tiver constraint, acrescentar runway no texto
+        if flight.required_runway is not None:
+            text = f"{base_text}     Runway {flight.required_runway}"
+        else:
+            text = base_text
+
         self.add_flight_button(flight, text)
 
 
     def add_flight_button(self, flight, text):
+
+        # cor normal
+        bg_color = "#e6f0ff"
+
+        # se tiver constraint highlight 
+        if flight.required_runway is not None:
+            bg_color = "#ffe6e6"  
+
         btn = tk.Button(
             self.scroll.scrollable_frame,
             text=text,
             font=("Arial", 14),
-            bg="#e6f0ff",
+            bg=bg_color,
             width=55,
             height=2
         )
 
         btn.config(command=lambda: self.select_flight(btn, flight))
         btn.pack(fill="x", pady=5)
-            
+
+        self.flight_buttons[flight] = btn
+
+        btn.config(command=lambda: self.select_flight(btn, flight))
+        btn.pack(fill="x", pady=5)
+                
         self.flight_buttons[flight] = btn
 
 
     def select_flight(self, button, flight):
-        if self.selected_flight_button:
-            self.selected_flight_button.config(bg="#e6f0ff")
 
+        # restaurar botão anterior
+        if self.selected_flight_button:
+            prev_flight = self.selected_flight_obj
+
+            # se tinha constraint volta a vermelho 
+            if prev_flight.required_runway is not None:
+                self.selected_flight_button.config(bg="#ffe6e6")
+            else:
+                self.selected_flight_button.config(bg="#e6f0ff")
+
+        # atualizar seleção
         self.selected_flight_button = button
         self.selected_flight_obj = flight
-        self.selected_flight = flight.callsign  # só para mensagens
+        self.selected_flight = flight.callsign
 
+        # highlight azul de seleção
         button.config(bg="#99ccff")
+
         self.add_log(f"Selected flight: {flight.callsign}")
 
-
+    
     def update_flight(self, flight):
         btn = self.flight_buttons.get(flight)
-        
-        # voo já não está na UI (foi autorizado)
+
         if not btn or not btn.winfo_exists():
             return
 
-        btn.config(text=f"{flight.callsign} - T-{flight.eta}s")
+        base_text = f"{flight.callsign} - T-{flight.eta}s"
+
+        if flight.required_runway is not None:
+            text = f"{base_text}     Runway {flight.required_runway}"
+        else:
+            text = base_text
+
+        btn.config(text=text)
 
 
     def remove_flight(self, flight):
@@ -280,20 +318,29 @@ class ATCApp:
         runway = self.engine.get_runway(self.selected_runway)
         flight = self.selected_flight_obj  
 
+        # VALIDAR CONSTRAINT
+        if flight.required_runway is not None:
+            if runway.name != flight.required_runway:
+                self.add_log(
+                    f"Constraint violation: {flight.callsign} "
+                    f"must use Runway {flight.required_runway}"
+                )
+                return
+
         success = self.engine.assign_flight_to_runway(flight, runway)
 
         if not success:
-            self.add_log(f"Pista {runway.name} está ocupada.")
+            self.add_log(f"Runway {runway.name} is already occupied.")
             return
 
         # remover voo da queue
         self.selected_flight_button.destroy()
 
         self.add_log(
-            f"Voo {flight.callsign} autorizado para a pista {runway.name}."
+            f"Flight {flight.callsign} authorized to runway {runway.name}."
         )
 
-        self.engine.flights.remove(flight)
+        #self.engine.flights.remove(flight)
 
         self.selected_runway_rect = None
         self.selected_runway = None

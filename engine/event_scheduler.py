@@ -62,7 +62,7 @@ class EventScheduler:
             self.ui.add_flight(flight)
 
         if self.message_manager.should_send_message():
-            print("sendddddd")
+            #print("sendddddd")
             msg = self.message_manager.generate_message()
             self.ui.add_system_message(msg)
 

@@ -7,7 +7,7 @@ class SystemMessageManager:
 
     def should_send_message(self):
         r = random.random()
-        print(r)
+        #print(r)
         return r < self.engine.cognitive.message_frequency
 
     def generate_message(self):
