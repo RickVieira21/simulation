@@ -8,6 +8,10 @@ class SimulationEngine:
         self.cognitive = cognitive_profile
         self.complexity = complexity_profile
 
+        self.total_errors = 0
+        self.constraint_errors = 0
+        self.expiration_errors = 0
+
         self.flights = []
         self.runways = [
             Runway("A"),
@@ -25,16 +29,19 @@ class SimulationEngine:
 
     def assign_flight_to_runway(self, flight, runway):
 
+        # pista ocupada
         if not runway.available:
+            #self.total_errors += 1
             return False
 
-        # VALIDAR CONSTRAINT
+        # constraint violation
         if flight.required_runway is not None:
             if runway.name != flight.required_runway:
+                self.constraint_errors += 1
+                self.total_errors += 1
                 return "CONSTRAINT_VIOLATION"
 
         duration = self.complexity.runway_occupation_time
-
         runway.occupy(flight, duration)
         flight.assigned_runway = runway.name
 

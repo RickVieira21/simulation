@@ -42,6 +42,10 @@ class EventScheduler:
             flight.tick(self.engine.cognitive.time_speed)
 
             if flight.completed:
+                print("aqui")
+                self.engine.total_errors += 1
+                self.engine.expiration_errors += 1
+                print(self.engine.expiration_errors)
                 self.ui.remove_flight(flight)
                 self.engine.flights.remove(flight)
             else:
@@ -49,8 +53,6 @@ class EventScheduler:
 
         self.root.after(1000, self.schedule_flight_update)
 
-
-# ----------------------
 
 
     def schedule_next_flight(self):

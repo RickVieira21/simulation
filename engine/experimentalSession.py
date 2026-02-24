@@ -15,6 +15,10 @@ class ExperimentalSession:
         self.condition_duration = 120
         self.baseline_duration = 10
 
+        self.trial_already_counted = False
+        self.total_errors_overall = 0
+        self.constraint_errors_overall = 0
+
         self.current_index = 0
         self.conditions = self.load_conditions(participant_id)
 
@@ -67,6 +71,7 @@ class ExperimentalSession:
         self.start_condition()
 
     def start_condition(self):
+        self.trial_already_counted = False
         if self.current_index >= len(self.conditions):
             print("Experiment finished")
             return
@@ -145,6 +150,19 @@ class ExperimentalSession:
 
     def start_baseline(self):
 
+        if self.trial_already_counted:
+           return
+
+        self.trial_already_counted = True
+
+        print("Trial errors:", self.engine.total_errors)
+        print("Overall before:", self.total_errors_overall)
+
+        self.total_errors_overall += self.engine.total_errors
+        self.constraint_errors_overall += self.engine.constraint_errors
+
+        print("Overall after:", self.total_errors_overall)
+
         print("Baseline period")
         # Cancelar timer da condição
         if hasattr(self, "timer_after_id"):
@@ -162,6 +180,13 @@ class ExperimentalSession:
         # Fechar janela se ainda estiver aberta
         if hasattr(self, "incidental_window") and self.incidental_window.winfo_exists():
             self.incidental_window.destroy()
+
+        # --------- TRIAL SUMMARY ----------
+        self.ui.add_log("----- TRIAL SUMMARY -----")
+        self.ui.add_log(f"Total Errors: {self.engine.total_errors}")
+        self.ui.add_log(f"Constraint Errors: {self.engine.constraint_errors}")
+        self.ui.add_log(f"Expiration Errors: {self.engine.expiration_errors}")
+        self.ui.add_log("--------------------------------")
 
         # Parar scheduler
         self.scheduler.stop()
@@ -214,6 +239,12 @@ class ExperimentalSession:
 
         if self.current_index >= len(self.conditions):
             print("Experiment finished")
+
+            print("===== PARTICIPANT SUMMARY =====")
+            print(f"Total Errors (Overall): {self.total_errors_overall}")
+            print(f"Constraint Errors (Overall): {self.constraint_errors_overall}")
+            print("================================")
+
             return
 
         # Recriar engine e UI do zero
@@ -222,6 +253,7 @@ class ExperimentalSession:
 
         self.engine = SimulationEngine(cognitive, complexity)
         self.app = ATCApp(self.root, self.engine)
+        self.ui = self.app   
         self.scheduler = EventScheduler(self.root, self.engine, self.app)
 
         self.scheduler.start()

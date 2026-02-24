@@ -311,40 +311,36 @@ class ATCApp:
 
 
     def authorize(self):
+
         if not self.selected_flight or not self.selected_runway:
             self.add_log("Selecione um voo e uma pista primeiro.")
             return
 
         runway = self.engine.get_runway(self.selected_runway)
-        flight = self.selected_flight_obj  
+        flight = self.selected_flight_obj
 
-        # VALIDAR CONSTRAINT
-        if flight.required_runway is not None:
-            if runway.name != flight.required_runway:
-                self.add_log(
-                    f"Constraint violation: {flight.callsign} "
-                    f"must use Runway {flight.required_runway}"
-                )
-                return
+        result = self.engine.assign_flight_to_runway(flight, runway)
 
-        success = self.engine.assign_flight_to_runway(flight, runway)
+        if result == "CONSTRAINT_VIOLATION":
+            self.add_log(
+                f"Constraint violation: {flight.callsign} "
+                f"must use Runway {flight.required_runway}"
+            )
+            return
 
-        if not success:
+        if result is False:
             self.add_log(f"Runway {runway.name} is already occupied.")
             return
 
-        # remover voo da queue
+        # sucesso
         self.selected_flight_button.destroy()
 
         self.add_log(
             f"Flight {flight.callsign} authorized to runway {runway.name}."
         )
 
-        #self.engine.flights.remove(flight)
-
         self.selected_runway_rect = None
         self.selected_runway = None
-
         self.selected_flight = None
         self.selected_flight_button = None
 
