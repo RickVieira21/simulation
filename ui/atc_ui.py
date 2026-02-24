@@ -361,6 +361,9 @@ class ATCApp:
 
     
     def add_system_message(self, message_obj):
+        # Guardar no engine
+        self.engine.system_messages.append(message_obj)
+
         row = tk.Frame(self.message_frame, bg="white")
         row.pack(fill="x", pady=1)
 

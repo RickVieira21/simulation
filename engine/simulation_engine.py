@@ -7,10 +7,12 @@ class SimulationEngine:
     def __init__(self, cognitive_profile, complexity_profile):
         self.cognitive = cognitive_profile
         self.complexity = complexity_profile
+        self.system_messages = []
 
         self.total_errors = 0
         self.constraint_errors = 0
         self.expiration_errors = 0
+        self.system_ack_errors = 0
 
         self.flights = []
         self.runways = [

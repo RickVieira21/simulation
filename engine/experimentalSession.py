@@ -19,6 +19,7 @@ class ExperimentalSession:
         self.total_errors_overall = 0
         self.constraint_errors_overall = 0
         self.expiration_errors_overall = 0
+        self.system_ack_errors_overall = 0
 
         self.current_index = 0
         self.conditions = self.load_conditions(participant_id)
@@ -156,16 +157,31 @@ class ExperimentalSession:
 
         self.trial_already_counted = True
 
+        # --------- SYSTEM ACK ERRORS ----------
+        unacked = [
+            msg for msg in self.engine.system_messages
+            if not msg.acknowledged
+        ]
+
+        num_unacked = len(unacked)
+
+        self.engine.system_ack_errors += num_unacked
+        self.engine.total_errors += num_unacked
+
+        #PER TRIAL
         print("")
         print("Trial errors:", self.engine.total_errors)
         print("Constraint errors:", self.engine.constraint_errors)
         print("Expiration errors:", self.engine.expiration_errors)
+        print("Ack errors:", self.engine.system_ack_errors)
         print("------------------")
 
+        #OVERALL
         print("Overall before:", self.total_errors_overall)
         self.total_errors_overall += self.engine.total_errors
         self.constraint_errors_overall += self.engine.constraint_errors
         self.expiration_errors_overall += self.engine.expiration_errors
+        self.system_ack_errors_overall += self.engine.system_ack_errors
 
         print("Overall after:", self.total_errors_overall)
         print("")
@@ -193,6 +209,7 @@ class ExperimentalSession:
         self.ui.add_log(f"Total Errors: {self.engine.total_errors}")
         self.ui.add_log(f"Constraint Errors: {self.engine.constraint_errors}")
         self.ui.add_log(f"Expiration Errors: {self.engine.expiration_errors}")
+        self.ui.add_log(f"System ACK Errors: {self.engine.system_ack_errors}")
         self.ui.add_log("--------------------------------")
 
         # Parar scheduler
